@@ -66,7 +66,7 @@ public:
 	virtual int Uninitialize() = 0;
 
 	// 同步读取
-	virtual int CaptureImage(int timeout, std::vector<uint8_t> image) = 0;
+	virtual int CaptureImage(int timeout, std::vector<uint8_t> &image) = 0;
 
 	// 新增：设置和获取属性的泛型接口
 	virtual bool SetProperty(Property property, const PropertyValue& value) = 0;

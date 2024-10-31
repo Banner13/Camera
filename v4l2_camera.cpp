@@ -56,6 +56,11 @@ V4l2Camera::V4l2Camera(string device)
 	m_fd = fd;
 	m_running = false;
 	m_initialized = false;
+
+	// test
+	m_pixelformat = V4L2_PIX_FMT_YUYV;
+	m_fps = 15;
+	m_resolution = Resolution{640, 480};
 }
 
 V4l2Camera::~V4l2Camera()
@@ -96,7 +101,7 @@ int V4l2Camera::V4L2_QueryFmtList(vector<string> &list)
 		format_str[3] = (fmtdesc.pixelformat >> 24) & 0xff;
 		format_str[4] = '\0';
 
-		list.push_back(string(format_str));
+		// list.push_back(string(format_str));
 
 		printf("Index %d: %s (FourCC: %s)\n", 	fmtdesc.index, 
 												fmtdesc.description, 
@@ -107,7 +112,7 @@ int V4l2Camera::V4L2_QueryFmtList(vector<string> &list)
 	return -ret;
 }
 
-int V4l2Camera::V4L2_QueryFrameSize(std::vector<Resolution> &list)
+int V4l2Camera::V4L2_QueryFrameSize(vector<Resolution> &list)
 {
 	int ret = 0;
 	int fd = m_fd;
@@ -363,12 +368,12 @@ int V4l2Camera::V4L2_DelBuf(void)
 	User API
 */
 
-int V4l2Camera::QueryFmtList(std::vector<std::string> &list)
+int V4l2Camera::QueryFmtList(vector<string> &list)
 {
 	return V4L2_QueryFmtList(list);
 }
 
-int V4l2Camera::QueryFrameSize(std::vector<Resolution> &list)
+int V4l2Camera::QueryFrameSize(vector<Resolution> &list)
 
 {
 	return V4L2_QueryFrameSize(list);
@@ -392,8 +397,9 @@ int V4l2Camera::Initialize()
 	if (V4L2_QueryBuf())
 		goto fatal;
 
-	for (int i = 0; i < m_buf_size; i++)
+	for (int i = 0; i < m_buf_count; i++)
 	{
+		printf("test i %d, m_buf_size %d\n", i, m_buf_count);
 		if (V4L2_QBuf(i))
 			goto fatal;
 	}
@@ -420,7 +426,7 @@ int V4l2Camera::Uninitialize()
     return V4L2_DelBuf();
 }
 
-int V4l2Camera::CaptureImage(int timeout_ms, vector<uint8_t> image)
+int V4l2Camera::CaptureImage(int timeout_ms, vector<uint8_t> &image)
 {
 	int ret;
 	fd_set fds;
@@ -446,6 +452,7 @@ int V4l2Camera::CaptureImage(int timeout_ms, vector<uint8_t> image)
 	buf = m_mem[index];
 	image.assign(static_cast<uint8_t*>(buf), static_cast<uint8_t*>(buf) + buf_size);
 
+	printf("image size %d\n", image.size());
 	if (V4L2_QBuf(index))
 		goto fatal;
 

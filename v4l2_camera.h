@@ -19,7 +19,7 @@ public:
 	int Stop() override final;
 	int Uninitialize() override final;
 
-	int CaptureImage(int timeout_ms, std::vector<uint8_t> image) override final;
+	int CaptureImage(int timeout_ms, std::vector<uint8_t> &image) override final;
 
 	int QueryFmtList(std::vector<std::string> &list) override final;
 	int QueryFrameSize(std::vector<Resolution> &list) override final;
