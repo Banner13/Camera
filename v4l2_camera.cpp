@@ -29,13 +29,23 @@ using namespace VideoCamera;
 #endif
 
 #define ERR_CHECK(cmd, tip)										\
-({																	\
-	int __ret = cmd;												\
-	if (__ret < 0) {												\
-		printf("%s: %s failed! %s\n",__func___, tip, strerror(errno));	\
-	}																\
-	__ret;															\
-})
+	({																	\
+		int __ret = cmd;												\
+		if (__ret < 0) {												\
+			printf("Error:%s: %s failed! %s\n\n",__func___, tip, strerror(errno));	\
+		}																\
+		__ret;															\
+	})
+
+#define WARN_CHECK(cmd, tip)										\
+	({																	\
+		int __ret = cmd;												\
+		if (__ret < 0) {												\
+			printf("Warning:%s: %s unsuccessful.\n",__func___, tip);					\
+		}																\
+		__ret;															\
+	})
+	
 
 #define CLEAN(x) memset(&x, 0, sizeof(x))
 
@@ -80,6 +90,7 @@ int V4l2Camera::V4L2_QueryFmtList(vector<string> &list)
 	int ret = 0;
 	int fd = m_fd;
 	const char *cdevice = m_device.c_str();
+	vector<int> pixelformat;
 
 	struct v4l2_fmtdesc fmtdesc;
 	CLEAN(fmtdesc);
@@ -88,7 +99,7 @@ int V4l2Camera::V4L2_QueryFmtList(vector<string> &list)
 
 	printf("\n");
 	printf("支持的视频格式列表:\n");
-	while (!ERR_CHECK(ioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc), "VIDIOC_ENUM_FMT")) {
+	while (!WARN_CHECK(ioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc), "VIDIOC_ENUM_FMT")) {
 		char format_str[5];
 		format_str[0] = fmtdesc.pixelformat & 0xff;
 		format_str[1] = (fmtdesc.pixelformat >> 8) & 0xff;
@@ -101,8 +112,16 @@ int V4l2Camera::V4L2_QueryFmtList(vector<string> &list)
 		printf("Index %d: %s (FourCC: %s)\n", 	fmtdesc.index, 
 												fmtdesc.description, 
 												format_str);
+		pixelformat.push_back(fmtdesc.pixelformat);
 		fmtdesc.index++;  // 增加索引以列举下一个格式
 	}
+
+	if (!pixelformat.size())
+		return -1;
+
+	// 格式检查是否支持
+	if (find(pixelformat.begin(), pixelformat.end(), m_pixelformat) == pixelformat.end())
+		m_pixelformat = pixelformat.front();
 
 	return -ret;
 }
@@ -113,19 +132,29 @@ int V4l2Camera::V4L2_QueryFrameSize(vector<Resolution> &list)
 	int fd = m_fd;
 	const char *cdevice = m_device.c_str();
 	int pixelformat = m_pixelformat;
+	int max_width = 0, max_height = 0;
 
 	struct v4l2_frmsizeenum frmsize;
 	CLEAN(frmsize);
 	frmsize.pixel_format = pixelformat;
 
 	printf("支持的帧大小:\n");
-	while (!ERR_CHECK(ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize), "VIDIOC_ENUM_FRAMESIZES")) {
+	while (!WARN_CHECK(ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize), "VIDIOC_ENUM_FRAMESIZES")) {
 		if (frmsize.type == V4L2_FRMSIZE_TYPE_DISCRETE) {
 			printf("宽度 = %u, 高度 = %u\n", 
 				frmsize.discrete.width, frmsize.discrete.height);
 		}
+		max_width = max_width > frmsize.discrete.width ? max_width : frmsize.discrete.width;
+		max_height = max_height > frmsize.discrete.height ? max_height : frmsize.discrete.height;
 		frmsize.index++;
 	}
+
+	if (!frmsize.index)
+		return -1;
+
+	// 分辨率检查是否支持
+	m_resolution.width = m_resolution.width > max_width ? max_width : m_resolution.width;
+	m_resolution.height = m_resolution.height > max_width ? max_height : m_resolution.height;
 
 	return -ret;
 }
@@ -212,7 +241,7 @@ int V4l2Camera::V4L2_FPSSetting(void)
 	setfps.parm.capture.timeperframe.numerator = 1;
 	setfps.parm.capture.timeperframe.denominator = fps;
 
-	if (!ERR_CHECK(ioctl(fd, VIDIOC_S_PARM, &setfps), "VIDIOC_S_PARM"))
+	if (!WARN_CHECK(ioctl(fd, VIDIOC_S_PARM, &setfps), "VIDIOC_S_PARM"))
 		printf("Set fps: %d.\n", setfps.parm.capture.timeperframe.denominator);
 
 	return -ret;

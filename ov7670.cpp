@@ -7,7 +7,7 @@ using namespace VideoCamera;
 
 Ov7670::Ov7670(string device)
 {
-	m_pixelformat = V4L2_PIX_FMT_YUYV;
+	m_pixelformat = V4L2_PIX_FMT_SRGGB8;
 	m_fps = 15;
 	m_resolution = Resolution{640, 480};
 }
