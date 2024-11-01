@@ -1,4 +1,5 @@
 #include <iostream>
+#include <unistd.h>
 
 #include "ov7670.h"
 
@@ -6,13 +7,13 @@
 using namespace std;
 static int gindex = 0;
 
-int process(vector<uint8_t> &image)
+int process(const vector<uint8_t> &image)
 {
-	void* buf = static_cast<void*>(image.data());
+	const void* buf = static_cast<const void*>(image.data());
 
 	printf("process image size %d\n", image.size());
 	char filename[64];
-	snprintf(filename, sizeof(filename), "test_%d.yuv", gindex++);
+	snprintf(filename, sizeof(filename), "/tmp/test_%d.yuv", gindex++);
 	
 	FILE *file = fopen(filename, "wb");
 	if (!file) {
@@ -35,7 +36,7 @@ int process(vector<uint8_t> &image)
 
 int main(void)
 {
-	vector<uint8_t> test;
+	vector<uint8_t> test(614400, 1);
 	vector<string> fmt;
 	vector<VideoCamera::Resolution> resolution;
 	Ov7670 camera;
@@ -43,11 +44,18 @@ int main(void)
 	camera.QueryFmtList(fmt);
 	camera.QueryFrameSize(resolution);
 
+	camera.SetImageAsyncCallback(process);
+
 	camera.Initialize();
 	camera.Start();
-	camera.CaptureImage(1000, test);
-	printf("main test size = %d\n", test.size());
-	process(test);
+
+	sleep(10);
+/*
+	for (int i = 0; i < 50; i++) {
+		camera.CaptureImage(1000, test);
+		process(test);
+	}
+*/
 	camera.Stop();
 	camera.Uninitialize();
 	

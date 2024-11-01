@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <thread>
 #include <map>
 #include "com_camera.h"
 
@@ -32,6 +33,7 @@ private:
 	int m_buf_count;
 	int m_buf_size;
 	std::map<int, void*> m_mem;
+	std::thread m_capture_thread;
 
 
 	int V4L2_QueryFmtList(std::vector<std::string> &list);
@@ -47,5 +49,8 @@ private:
 	int V4L2_DQBuf(int &index);
 	int V4L2_StreamOff(void);
 	int V4L2_DelBuf(void);
+
+	int AsyncCaptureImage(void);
+
 };
 

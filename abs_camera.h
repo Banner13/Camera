@@ -36,7 +36,7 @@ namespace VideoCamera {
 									vector<Resolution>
 														>;
 	
-	using CaptureCallback = function<bool(const vector<uint8_t>& image)>;
+	using CaptureCallback = function<int(const vector<uint8_t> &image)>;
 }
 
 class Camera {

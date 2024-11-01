@@ -329,7 +329,7 @@ int V4l2Camera::V4L2_StreamOn(void)
 	int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	
 	if (!ERR_CHECK(ioctl(fd, VIDIOC_STREAMON, &type), "VIDIOC_STREAMON"))
-		return -1;;
+		return -1;
 
 	printf("Start Capture\n");
 
@@ -427,6 +427,8 @@ int V4l2Camera::Initialize()
 			goto fatal;
 	}
 
+	m_initialized = true;
+
 	return 0;
 
 fatal:
@@ -435,18 +437,75 @@ fatal:
 
 int V4l2Camera::Start()
 {
-    return V4L2_StreamOn();
+	if (m_running)
+		return -1;
+
+	m_running = true;
+	if (m_async_callback) {
+		m_capture_thread = thread(bind(&V4l2Camera::AsyncCaptureImage, this));
+		m_capture_thread.detach();
+	}
+		
+	return V4L2_StreamOn();
 }
 
 int V4l2Camera::Stop()
 {
-    return V4L2_StreamOff();
+	int ret = V4L2_StreamOff();
+	m_running = false;
+	return ret;
 }
 
 int V4l2Camera::Uninitialize()
 {
-    //std::cout << "Camera shutdown.\n";
-    return V4L2_DelBuf();
+	//std::cout << "Camera shutdown.\n";
+	m_initialized = false;
+	return V4L2_DelBuf();
+}
+
+int V4l2Camera::AsyncCaptureImage()
+{
+	void *buf;
+	int ret = 0;
+	int index;
+	int fd = m_fd;
+	int buf_size = m_buf_size;
+	int nfds = fd + 1;
+	fd_set readfds;
+	vector<uint8_t> image_data(buf_size, 1);
+
+	FD_ZERO(&readfds);
+	FD_SET(fd, &readfds);
+
+	while (m_running && m_async_callback)
+	{
+		image_data.clear();
+		ret = select(nfds, &readfds, NULL, NULL, NULL); 
+		if (ret > 0) {
+			if (FD_ISSET(fd, &readfds)) {
+				if(V4L2_DQBuf(index))
+					goto fatal;
+
+				buf = m_mem[index];
+				
+				image_data.assign(static_cast<uint8_t*>(buf), static_cast<uint8_t*>(buf) + buf_size);
+
+				if (V4L2_QBuf(index))
+					goto fatal;
+
+				if (m_async_callback(image_data))
+					goto fatal;
+			}
+		} else if (ret == 0) {
+			// 由于 timeout 为 NULL，此分支不会被执行
+		} else {
+			perror("select 出错");
+		}
+	}
+	return 0;
+
+fatal:
+	return -1;
 }
 
 int V4l2Camera::CaptureImage(int timeout_ms, vector<uint8_t> &image)
@@ -459,6 +518,16 @@ int V4l2Camera::CaptureImage(int timeout_ms, vector<uint8_t> &image)
 	struct timeval tv;
 	int index;
 
+	// 如果设置了异步处理，则不能使用该函数
+	if (m_async_callback || !m_running)
+		goto fatal;
+	// debug info
+	/*
+	struct timespec copy_start;
+	struct timespec copy_end;
+	uint64_t tstart;
+	uint64_t tend;
+	*/
 	tv.tv_sec = 0;
 	tv.tv_usec = timeout_ms * 1000;
 
@@ -473,9 +542,16 @@ int V4l2Camera::CaptureImage(int timeout_ms, vector<uint8_t> &image)
 		goto fatal;
 
 	buf = m_mem[index];
-	image.assign(static_cast<uint8_t*>(buf), static_cast<uint8_t*>(buf) + buf_size);
 
-	printf("image size %d\n", image.size());
+	// clock_gettime(CLOCK_MONOTONIC, &copy_start);
+	image.assign(static_cast<uint8_t*>(buf), static_cast<uint8_t*>(buf) + buf_size);
+	// clock_gettime(CLOCK_MONOTONIC, &copy_end);
+
+	/*
+	tstart = copy_start.tv_sec * 1000000LL + copy_start.tv_nsec / 1000LL;
+	tend = copy_end.tv_sec * 1000000LL + copy_end.tv_nsec / 1000LL;
+	printf("vector copy %d ,use %lld us\n", image.size(), tend-tstart);
+	*/
 	if (V4L2_QBuf(index))
 		goto fatal;
 
