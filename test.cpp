@@ -1,6 +1,7 @@
 #include <iostream>
 
-#include "v4l2_camera.h"
+#include "ov7670.h"
+
 
 using namespace std;
 static int gindex = 0;
@@ -37,7 +38,7 @@ int main(void)
 	vector<uint8_t> test;
 	vector<string> fmt;
 	vector<VideoCamera::Resolution> resolution;
-	V4l2Camera camera;
+	Ov7670 camera;
 
 	camera.QueryFmtList(fmt);
 	camera.QueryFrameSize(resolution);

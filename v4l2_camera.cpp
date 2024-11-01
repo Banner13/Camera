@@ -56,11 +56,6 @@ V4l2Camera::V4l2Camera(string device)
 	m_fd = fd;
 	m_running = false;
 	m_initialized = false;
-
-	// test
-	m_pixelformat = V4L2_PIX_FMT_YUYV;
-	m_fps = 15;
-	m_resolution = Resolution{640, 480};
 }
 
 V4l2Camera::~V4l2Camera()
@@ -399,7 +394,6 @@ int V4l2Camera::Initialize()
 
 	for (int i = 0; i < m_buf_count; i++)
 	{
-		printf("test i %d, m_buf_size %d\n", i, m_buf_count);
 		if (V4L2_QBuf(i))
 			goto fatal;
 	}
