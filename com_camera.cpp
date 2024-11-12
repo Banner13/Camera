@@ -16,8 +16,11 @@ bool ComCamera::SetProperty(Property property, const PropertyValue& value)
 			break;
 		case Property::GAIN:
 			break;
+		case Property::RW_PROPERTY:
+		case Property::RO_PROPERTY:
+		case Property::FORMAT_LIST:
+			break;
 	}
-
 
 	return true;
 }
@@ -25,6 +28,7 @@ bool ComCamera::SetProperty(Property property, const PropertyValue& value)
 PropertyValue ComCamera::GetProperty(Property property) const
 {
 	PropertyValue temp;
+
 	switch (property) {
 		case Property::PIXEL_FORMAT:
 			break;
@@ -35,6 +39,10 @@ PropertyValue ComCamera::GetProperty(Property property) const
 		case Property::EXPOSURE:
 			break;
 		case Property::GAIN:
+			break;
+		case Property::RW_PROPERTY:
+		case Property::RO_PROPERTY:
+		case Property::FORMAT_LIST:
 			break;
 	}
 

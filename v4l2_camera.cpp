@@ -89,7 +89,7 @@ int V4l2Camera::V4L2_QueryFmtList(vector<string> &list)
 {
 	int ret = 0;
 	int fd = m_fd;
-	const char *cdevice = m_device.c_str();
+	// const char *cdevice = m_device.c_str();
 	vector<int> pixelformat;
 
 	struct v4l2_fmtdesc fmtdesc;
@@ -130,9 +130,9 @@ int V4l2Camera::V4L2_QueryFrameSize(vector<Resolution> &list)
 {
 	int ret = 0;
 	int fd = m_fd;
-	const char *cdevice = m_device.c_str();
+	// const char *cdevice = m_device.c_str();
 	int pixelformat = m_pixelformat;
-	int max_width = 0, max_height = 0;
+	uint32_t max_width = 0, max_height = 0;
 
 	struct v4l2_frmsizeenum frmsize;
 	CLEAN(frmsize);
@@ -372,7 +372,7 @@ int V4l2Camera::V4L2_StreamOff(void)
 int V4l2Camera::V4L2_DelBuf(void)
 {
 	int ret = 0;
-	int fd = m_fd;
+	// int fd = m_fd;
 	int count = m_buf_count;
 	int buf_size = m_buf_size;
 	void *ptr;
@@ -406,7 +406,7 @@ int V4l2Camera::QueryFrameSize(vector<Resolution> &list)
 
 int V4l2Camera::Initialize()
 {
-	int ret = 0;
+	// int ret = 0;
 	if (V4L2_CapabilityCheck())
 		goto fatal;
 
@@ -555,7 +555,7 @@ int V4l2Camera::CaptureImage(int timeout_ms, vector<uint8_t> &image)
 	if (V4L2_QBuf(index))
 		goto fatal;
 
-	return 0;
+	return ret;
 
 fatal:
 	return -1;

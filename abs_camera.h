@@ -26,8 +26,8 @@ namespace VideoCamera {
 
 	// 定义分辨率结构
 	struct Resolution {
-		int width;
-		int height;
+		uint32_t width;
+		uint32_t height;
 	};
 
 	// 使用 std::variant 来存储多种类型的属性

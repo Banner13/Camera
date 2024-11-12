@@ -39,26 +39,28 @@ int main(void)
 	vector<uint8_t> test(614400, 1);
 	vector<string> fmt;
 	vector<VideoCamera::Resolution> resolution;
-	Ov7670 camera;
+	Camera* camera = new Ov7670();
+	// Ov7670 camera;
 
-	camera.QueryFmtList(fmt);
-	camera.QueryFrameSize(resolution);
+	// camera->QueryFmtList(fmt);
+	// camera->QueryFrameSize(resolution);
 
-	camera.SetImageAsyncCallback(process);
+	camera->SetImageAsyncCallback(process);
 
-	camera.Initialize();
-	camera.Start();
+	camera->Initialize();
+	camera->Start();
 
 	sleep(10);
 /*
 	for (int i = 0; i < 50; i++) {
-		camera.CaptureImage(1000, test);
+		camera->CaptureImage(1000, test);
 		process(test);
 	}
 */
-	camera.Stop();
-	camera.Uninitialize();
+	camera->Stop();
+	camera->Uninitialize();
 	
+	delete camera;
 	cout << "hello, jack" << endl;
 	return 0;
 }
